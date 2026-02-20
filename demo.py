@@ -14,7 +14,7 @@ class Args:
         self.image_aspect_ratio = 'pad' # Importante para LLaVA v1.5
 
 # 1. Cargar el modelo PathGen-LLaVA
-model_path = "/workspace/MLLMs/PathGen-LLaVA"
+model_path = "/workspace/MLLMs/LLaVA/PathGen-LLaVA"
 model_name = get_model_name_from_path(model_path)
 
 # Cargamos el modelo usando la función estándar de LLaVA

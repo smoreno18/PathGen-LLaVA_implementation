@@ -2,7 +2,6 @@
 Este repo contiene una versión de **PathGen-LLaVA** adaptada para hacer
 inferencia sobre regiones de Whole Slide Images (WSI), scripts claves:
 
-- `utils/load_model.py` → carga del modelo
 - `main.py`      → función de inferencia sobre una región de WSI
 - `demo.py`              → **demo** de uso 
 
@@ -11,10 +10,10 @@ inferencia sobre regiones de Whole Slide Images (WSI), scripts claves:
 
 ```bash
 # Build
-docker build -t quilt-llava-qllava .
+docker build -t pathgen .
 
 # Run 
-docker run <CONFIG> quilt-llava-qllava
+docker run <CONFIG> pathgen
 ```
 
 ## Descargar los pesos desde HF

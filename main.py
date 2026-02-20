@@ -32,32 +32,16 @@ def crop_region_from_wsi(
         return wsi.read_region((x1, y1), level, (w, h)).convert("RGB")
     raise TypeError(f"Objeto WSI no soportado: {type(wsi)}")
 
-def pathgen_infer_region(
-    tokenizer,
-    model,
-    image_processor,
-    context_len,
-    args,
-    wsi: WSIType,
-    coords: Tuple[int, int, int, int],
-    user_prompt: str,
-    level: int = 0,
-    conv=None,
-):
-    """
-    Inferencia adaptada específicamente para PathGen-LLaVA.
-    """
+
+def pathgen_infer_region(tokenizer, model, image_processor, context_len, args, wsi, coords, user_prompt, level=0, conv=None):
     x1, y1, x2, y2 = coords
     patch = crop_region_from_wsi(wsi, x1, y1, x2, y2, level=level)
 
-    # PathGen utiliza float16 o bfloat16 dependiendo del hardware
     image_tensor = process_images([patch], image_processor, args)
     image_tensor = image_tensor.to(model.device, dtype=torch.float16)
 
-    # PathGen-LLaVA usa típicamente el template 'llava_v1' o 'v1'
     if conv is None:
-        conv_mode = getattr(args, "conv_mode", "llava_v1")
-        conv = conv_templates[conv_mode].copy()
+        conv = conv_templates[args.conv_mode].copy()
 
     roles = conv.roles
     inp = DEFAULT_IMAGE_TOKEN + "\n" + user_prompt
@@ -65,13 +49,7 @@ def pathgen_infer_region(
     conv.append_message(roles[1], None)
 
     prompt = conv.get_prompt()
-
-    input_ids = tokenizer_image_token(
-        prompt,
-        tokenizer,
-        IMAGE_TOKEN_INDEX,
-        return_tensors="pt",
-    ).unsqueeze(0).to(model.device)
+    input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(model.device)
 
     stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
     keywords = [stop_str]
@@ -82,18 +60,22 @@ def pathgen_infer_region(
             input_ids,
             images=image_tensor,
             do_sample=True,
-            temperature=getattr(args, "temperature", 0.2),
-            max_new_tokens=getattr(args, "max_new_tokens", 512),
+            temperature=args.temperature,
+            max_new_tokens=args.max_new_tokens,
             use_cache=True,
             stopping_criteria=[stopping_criteria],
         )
 
-    generated_ids = output_ids[0, input_ids.shape[1]:]
-    # En lugar de recortar manualmente, deja que el tokenizer gestione los tokens especiales
+    # CAMBIO CRÍTICO: Decodificación más robusta
     outputs = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
-    # Si la respuesta incluye tu pregunta al principio, límpiala:
-    if prompt in outputs:
-        outputs = outputs.replace(prompt, "").strip()
-    conv.messages[-1][-1] = outputs
+    
+    # Si la respuesta incluye el prompt, lo eliminamos limpiamente
+    if outputs.startswith(prompt):
+        outputs = outputs[len(prompt):].strip()
+    
+    # Limpieza de tokens de parada residuales
+    if outputs.endswith(stop_str):
+        outputs = outputs[:-len(stop_str)].strip()
 
+    conv.messages[-1][-1] = outputs
     return outputs, conv
