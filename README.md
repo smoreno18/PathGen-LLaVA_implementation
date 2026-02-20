@@ -2,6 +2,7 @@
 Este repo contiene una versión de **PathGen-LLaVA** adaptada para hacer
 inferencia sobre regiones de Whole Slide Images (WSI), scripts claves:
 
+- `utils/load_model.py` → carga el modelo
 - `main.py`      → función de inferencia sobre una región de WSI
 - `demo.py`              → **demo** de uso 
 
