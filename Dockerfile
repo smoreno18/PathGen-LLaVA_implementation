@@ -54,4 +54,4 @@ ENV PIL_INTERPOLATION=3
 
 # ---------- 8) Comando por defecto ----------
 # Usamos la ruta completa del script de demo o main que desees ejecutar
-ENTRYPOINT ["python", "llava/pathgen.py"]
+ENTRYPOINT ["python", "llava/demo.py"]
